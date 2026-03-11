@@ -1,82 +1,71 @@
-# 3-Tier-ALB-HTTPS-WAF-CloudFront
 # Secure & Globally Accelerated 3-Tier Web Architecture on AWS
 
-A modern, production-grade **3-tier web application** architecture on AWS with global edge delivery, strong security, high availability, and automatic scaling.
+A production-grade **3-tier web application** architecture on AWS featuring:
 
-This design features:
-- Global caching & protection at the edge (CloudFront + WAF)
-- TLS everywhere (ACM)
-- Internal load balancing
-- Private compute & database tiers
-- Multi-AZ redundancy across the board
+- Global edge delivery and caching with **CloudFront**
+- Web application firewall protection at the edge (**AWS WAF**)
+- TLS encryption everywhere (**ACM**)
+- Internal load balancing (**ALB**)
+- Private application and database tiers
+- Multi-AZ high availability across all layers
 
-![Secure 3-Tier AWS Architecture with CloudFront & WAF](secure-3-tier-cloudfront-waf.drawio.svg)
 
-*(Vector SVG – zoomable on GitHub. Fully editable in diagrams.net/draw.io: File → Open → GitHub → select this repo/file.)*
+*(Static SVG – zoomable directly in the browser. No editing required.)*
 
 ## Architecture Overview
 
 - **Region**: us-east-1 (multi-AZ: us-east-1a & us-east-1b)
-- **VPC**: Single VPC with public and private subnets in both AZs
-- **Entry Point**: Amazon CloudFront (CDN) + AWS WAF for edge caching, DDoS protection, and web exploit blocking
+- **VPC**: Single VPC with public and private subnets in both Availability Zones
 
 ### Traffic Flow
 1. **DNS** → Route 53 resolves custom domain to CloudFront distribution
-2. **Client** → CloudFront edge location (caches responses, applies WAF rules)
-3. **CloudFront** → Origin (Application Load Balancer) via Origin Access Control (OAC) for security
-4. **ALB** (internal) → Presentation tier ASG → Application tier ASG → RDS (Multi-AZ MySQL)
-5. **Outbound** (from private subnets) → NAT Gateway (in public subnets) → Internet
+2. **Client** → CloudFront edge location (caches content, applies WAF rules)
+3. **CloudFront** → Origin (internal Application Load Balancer)
+4. **ALB** → Presentation tier (Auto Scaling Group) → Application tier (Auto Scaling Group) → RDS MySQL (Multi-AZ)
+5. **Outbound internet** from private subnets → NAT Gateway (in public subnets)
 
 ### Key Components
 
 - **Global Edge Layer**
-  - **CloudFront** — Caches static/dynamic content, reduces latency
-  - **AWS WAF** — Attached to CloudFront for OWASP Top 10 protection
-  - **ACM** — Free TLS certificates for HTTPS (CloudFront + ALB)
+  - **CloudFront** – Low-latency caching, global distribution, DDoS protection
+  - **AWS WAF** – Protects against common web exploits (SQL injection, XSS, bots)
+  - **ACM** – Free TLS certificates for HTTPS
 
 - **Public Tier**
   - Public subnets (one per AZ)
-  - NAT Gateways (for private outbound internet)
+  - NAT Gateways for private outbound internet access
 
 - **Application Tier (Private)**
   - **Auto Scaling Groups (ASG)** for presentation and application layers
-  - Instances in private subnets (no public IPs)
-  - Horizontal scaling based on demand
+  - EC2 instances in private subnets (no public IPs)
+  - Automatic scaling and self-healing
 
 - **Data Tier (Private)**
   - **Amazon RDS MySQL (Multi-AZ)**
-    - Primary database in us-east-1a
-    - Standby (synchronous replica) in us-east-1b
-    - Automatic failover (< 2 minutes, near-zero data loss)
-  - DB subnet group spans both private subnets
+    - Primary instance in us-east-1a
+    - Standby synchronous replica in us-east-1b
+    - Automatic failover with near-zero data loss
 
 - **Observability**
-  - **CloudWatch Logs** — Centralized logging
+  - **CloudWatch Logs** – Centralized logging
 
 ## Design Goals & Benefits
 
-- **Security** — WAF at edge, private compute/DB, TLS termination, OAC-restricted origins
-- **Performance** — Global edge caching (CloudFront), low-latency ALB routing
-- **High Availability** — Multi-AZ across ALB, ASGs, RDS, and NAT
-- **Scalability** — Auto Scaling Groups handle traffic spikes automatically
-- **Cost Efficiency** — Caching reduces origin load; scale down when quiet
+- **Security** — Edge-level WAF, private compute/database, TLS termination, restricted origins
+- **Performance** — Global caching reduces latency and origin load
+- **High Availability** — Multi-AZ redundancy for ALB, ASGs, and RDS
+- **Scalability** — Auto Scaling Groups handle demand automatically
+- **Cost Efficiency** — Caching lowers data transfer and compute costs
 
-## Production Recommendations
+## Production Hardening Suggestions
 
-- Add **Origin Access Control (OAC)** on CloudFront → restrict ALB to CloudFront only
-- Make ALB **internal** (no public IPs)
-- Move presentation tier ASG to private subnets (or replace with S3 origin for static files)
-- Add scaling policies (e.g., target tracking on CPU 50%)
-- Enable **CloudWatch alarms**, **X-Ray tracing**, and detailed monitoring
-- Use **IAM roles** for instances (no access keys)
-- Consider **RDS Proxy** for connection pooling
+- Use **Origin Access Control (OAC)** on CloudFront to restrict ALB access
+- Make the ALB **internal** (no public exposure)
+- Move presentation tier ASG to private subnets (or serve static content from S3 via CloudFront)
+- Add scaling policies (e.g., CPU-based target tracking)
+- Enable CloudWatch alarms and X-Ray for tracing
+- Use IAM roles for instances (no hard-coded credentials)
 
-## How to View / Edit the Diagram
+Built with AWS best practices in mind.
 
-1. Click the SVG preview above (or open the file in this repo).
-2. To edit: https://app.diagrams.net → **File → Open → GitHub** → select this repository/file.
-
-Built with diagrams.net (draw.io) + AWS icons.  
-Questions, improvements, or forks welcome — open an issue or PR!
-
-#AWS #CloudArchitecture #DevOps #WebDevelopment
+Questions or suggestions? Feel free to open an issue!
